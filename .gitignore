@@ -1,0 +1,14 @@
+node_modules/
+dist/
+out-tsc/
+.sass-cache/
+.angular/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json

@@ -1,0 +1,141 @@
+@if (loading()) {
+  <div class="result-loading">
+    <mat-spinner diameter="42"></mat-spinner>
+    <span>Loading your risk assessment…</span>
+  </div>
+}
+
+@if (result(); as r) {
+  <div class="result-page">
+    <div class="result-head">
+      <div>
+        <span class="eyebrow">Assessment complete</span>
+        <h1>Your heart risk report</h1>
+        <p>Report #{{ r.id }} · generated {{ r.submittedAt | date: 'medium' }}</p>
+      </div>
+      <div class="result-actions">
+        <button mat-stroked-button (click)="shareReport()">
+          <mat-icon>share</mat-icon> Share
+        </button>
+        <button mat-stroked-button (click)="downloadReport()">
+          <mat-icon>download</mat-icon> Download report
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-grid">
+      <!-- Score -->
+      <div class="hero-score">
+        <div class="meter-wrap">
+          <app-risk-meter [value]="r.riskScore" [level]="r.riskLevel" [size]="260"></app-risk-meter>
+        </div>
+        <span class="risk-badge" [class.medium]="r.riskLevel === 'medium'" [class.high]="r.riskLevel === 'high'">
+          <mat-icon>
+            @switch (r.riskLevel) {
+              @case ('low') { check_circle }
+              @case ('medium') { error_outline }
+              @default { warning }
+            }
+          </mat-icon>
+          {{ r.riskLevel }} risk
+        </span>
+        <p class="risk-note">
+          Based on the ML engine, your estimated 10-year coronary heart disease probability is
+          <strong>{{ r.diseaseProbability }}%</strong>. This is a screening estimate, not a medical diagnosis.
+        </p>
+      </div>
+
+      <!-- Summary -->
+      <div class="hero-summary">
+        <div class="summary-card">
+          <div class="summary-row">
+            <div class="metric-mini">
+              <span class="metric-mini-icon"><mat-icon>favorite</mat-icon></span>
+              <div>
+                <strong>{{ r.input.age }} yrs</strong>
+                <span>Age at screening</span>
+              </div>
+            </div>
+            <div class="metric-mini">
+              <span class="metric-mini-icon"><mat-icon>straighten</mat-icon></span>
+              <div>
+                <strong>{{ r.input.heightCm }} cm</strong>
+                <span>{{ r.input.weightKg }} kg · BMI {{ r.input.bmi }}</span>
+              </div>
+            </div>
+            <div class="metric-mini">
+              <span class="metric-mini-icon"><mat-icon>monitor_heart</mat-icon></span>
+              <div>
+                <strong>{{ r.input.heartRate }} bpm</strong>
+                <span>Resting heart rate</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="confidence-row">
+            <div class="confidence-text">
+              <strong>Model confidence</strong>
+              <span>How sure the engine is about this estimate</span>
+            </div>
+            <app-circular-progress [value]="r.confidence" [size]="86" [strokeWidth]="8" [color]="meterColor[r.riskLevel]">
+              <strong style="font-size: 18px">{{ r.confidence }}%</strong>
+            </app-circular-progress>
+          </div>
+
+          <div class="summary-meta">
+            <mat-icon>bloodtype</mat-icon>
+            <span>{{ metricSummary() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contributing factors -->
+    <div class="section-card">
+      <h2><mat-icon>insights</mat-icon> What is driving your score</h2>
+      <p class="section-sub">Each factor pulls your risk up (red) or down (green). Longer bars = stronger influence.</p>
+
+      @for (factor of r.contributingFactors; track factor.factor) {
+        <div class="factor-row">
+          <span class="factor-name">{{ factor.label }}</span>
+          <div class="factor-track">
+            <span class="factor-fill" [class]="factorBarClass(factor)" [style.width]="factorWidth(factor)"></span>
+          </div>
+          <span class="factor-detail">{{ factor.detail }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Recommendations -->
+    <div class="section-card">
+      <h2><mat-icon>recommend</mat-icon> Your action plan</h2>
+      <p class="section-sub">Personalised steps to lower your risk. Start with the first one today.</p>
+
+      <div class="recommendations">
+        @for (rec of r.recommendations; track rec; let i = $index) {
+          <div class="rec-card">
+            <span class="rec-icon" [class]="i % 3 === 1 ? 'secondary' : i % 3 === 2 ? 'accent' : ''">
+              <mat-icon>{{ i % 3 === 0 ? 'favorite' : i % 3 === 1 ? 'self_improvement' : 'monitor_heart' }}</mat-icon>
+            </span>
+            <div class="rec-text">
+              <strong>Recommendation {{ i + 1 }}</strong>
+              <p>{{ rec }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="result-footer">
+      <button mat-stroked-button routerLink="/app/predict">
+        <mat-icon>edit</mat-icon> New assessment
+      </button>
+      <button mat-stroked-button routerLink="/app/history">
+        <mat-icon>history</mat-icon> View history
+      </button>
+      <button mat-flat-button color="primary" routerLink="/app/dashboard">
+        <mat-icon>dashboard</mat-icon> Back to dashboard
+      </button>
+    </div>
+  </div>
+}

@@ -1,0 +1,137 @@
+<div class="analytics-page">
+  <div class="analytics-head">
+    <span class="eyebrow">Data insights</span>
+    <h1>Analytics</h1>
+    <p>Aggregated trends across every prediction run on the platform.</p>
+  </div>
+
+  @if (summary(); as s) {
+    <div class="stats-grid">
+      <app-stat-card label="Total predictions" icon="insights" tone="primary" [loading]="loading()">
+        {{ s.totalPredictions }}
+      </app-stat-card>
+      <app-stat-card label="Total users" icon="group" tone="secondary" [loading]="loading()">
+        {{ s.totalUsers }}
+      </app-stat-card>
+      <app-stat-card label="Average risk score" icon="speed" tone="warning" [loading]="loading()">
+        {{ s.avgRiskScore }}
+      </app-stat-card>
+      <app-stat-card label="High-risk rate" icon="warning" tone="danger" [loading]="loading()">
+        {{ s.highRiskRate }}%
+      </app-stat-card>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card">
+        <h2><mat-icon>show_chart</mat-icon> Monthly predictions</h2>
+        <p class="card-sub">Total assessments and high-risk cases per month.</p>
+        <app-chart
+          kind="line"
+          [labels]="monthly().labels"
+          [datasets]="[
+            {
+              label: 'All predictions',
+              data: monthly().predictions,
+              borderColor: '#E53935',
+              backgroundColor: 'rgba(229, 57, 53, 0.12)',
+              fill: true,
+              tension: 0.4,
+              pointRadius: 4,
+            },
+            {
+              label: 'High risk',
+              data: monthly().highRisk,
+              borderColor: '#F9A825',
+              backgroundColor: 'rgba(249, 168, 37, 0.08)',
+              fill: true,
+              tension: 0.4,
+              pointRadius: 4,
+              borderDash: [6, 4],
+            },
+          ]"
+          height="280px"
+        ></app-chart>
+      </div>
+
+      <div class="card">
+        <h2><mat-icon>pie_chart</mat-icon> Risk distribution</h2>
+        <p class="card-sub">Proportion of predictions by risk classification.</p>
+        <app-chart
+          kind="doughnut"
+          [labels]="riskDistribution().labels"
+          [datasets]="[{
+            data: riskDistribution().values,
+            backgroundColor: riskDistribution().colors,
+            borderWidth: 0,
+          }]"
+          height="260px"
+          [options]="{
+            cutout: '64%',
+            plugins: { legend: { position: 'bottom' } },
+          }"
+        ></app-chart>
+        <div class="chart-legend">
+          @for (d of s.riskDistribution; track d.label) {
+            <span class="legend-item">
+              <span class="swatch" [style.background]="d.color"></span>
+              {{ d.label }} · {{ d.value }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><mat-icon>cake</mat-icon> Age distribution</h2>
+        <p class="card-sub">Assessments by age bracket with high-risk breakdown.</p>
+        <table class="age-table">
+          <thead>
+            <tr>
+              <th>Age range</th>
+              <th>Total</th>
+              <th>High risk</th>
+              <th style="width: 34%">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of s.ageDistribution; track a.range) {
+              <tr>
+                <td><strong>{{ a.range }}</strong></td>
+                <td>{{ a.total }}</td>
+                <td>
+                  @if (a.highRisk > 0) {
+                    <span style="color: var(--danger); font-weight: 600">{{ a.highRisk }}</span>
+                  } @else {
+                    <span style="color: var(--text-tertiary)">—</span>
+                  }
+                </td>
+                <td class="age-bar-cell">
+                  <div class="bar">
+                    <span [style.width.%]="s.totalPredictions ? (a.total / s.totalPredictions * 100) : 0"></span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2><mat-icon>wc</mat-icon> Gender split</h2>
+        <p class="card-sub">Distribution of predictions by recorded gender.</p>
+        <app-chart
+          kind="pie"
+          [labels]="genderDistribution().labels"
+          [datasets]="[{
+            data: genderDistribution().values,
+            backgroundColor: ['#1565C0', '#E91E63'],
+            borderWidth: 0,
+          }]"
+          height="240px"
+          [options]="{
+            plugins: { legend: { position: 'bottom' } },
+          }"
+        ></app-chart>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,85 @@
+<div class="admin-page">
+  <div class="admin-head">
+    <span class="eyebrow">Admin console</span>
+    <h1>User management</h1>
+    <p>Search patient and admin accounts across the CardioSight platform.</p>
+  </div>
+
+  <div class="toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="search" placeholder="Search by name or email…" />
+    </mat-form-field>
+    <span class="toolbar-count"><strong>{{ users().length }}</strong> users</span>
+  </div>
+
+  @if (loading()) {
+    <div class="table-wrap">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+      <div style="min-height: 260px"></div>
+    </div>
+  } @else if (users().length === 0) {
+    <div class="table-wrap">
+      <app-empty-state
+        icon="person_off"
+        title="No users found"
+        message="No accounts match your search. Try a different name or email."
+      ></app-empty-state>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th class="hide-mobile">Predictions</th>
+            <th>Status</th>
+            <th class="hide-mobile">Last active</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track u.id) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <app-avatar [name]="u.firstName + ' ' + u.lastName" [color]="u.avatarColor" [size]="38"></app-avatar>
+                  <div>
+                    <strong>{{ u.firstName }} {{ u.lastName }}</strong>
+                    <span>{{ u.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="role-chip" [class]="u.role">{{ u.role }}</span>
+              </td>
+              <td class="hide-mobile">
+                <strong>{{ u.predictionsCount }}</strong>
+              </td>
+              <td>
+                <span class="status-chip" [class]="statusClass(u.status)">
+                  <span class="dot"></span>
+                  {{ u.status }}
+                </span>
+              </td>
+              <td class="hide-mobile">
+                <span style="font-size: 12px; color: var(--text-secondary)">{{ u.lastActiveAt | date: 'MMM d, h:mm a' }}</span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button mat-icon-button matTooltip="Suspend account" (click)="suspend(u)">
+                    <mat-icon>block</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Delete account" color="warn" (click)="delete(u)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

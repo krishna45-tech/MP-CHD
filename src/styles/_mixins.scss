@@ -1,0 +1,120 @@
+// =============================================================================
+// Shared SCSS mixins and helpers (premium edition)
+// =============================================================================
+
+// Card base – layered surface with soft border and floating shadow
+@mixin card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+// Premium hover lift with springy easing
+@mixin card-hover {
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-strong);
+  }
+}
+
+// Frosted glass surface
+@mixin glass {
+  background: var(--surface-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border);
+}
+
+// Glass surface with top-edge highlight for a "lit" premium look
+@mixin glass-lite {
+  background: var(--surface-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    var(--shadow-sm);
+}
+
+// Focus ring used across interactive elements
+@mixin focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+}
+
+// Gradient headline text
+@mixin gradient-text($from: var(--primary), $via: var(--primary-light), $to: var(--secondary)) {
+  background: linear-gradient(115deg, $from 0%, $via 50%, $to 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+// Aurora / mesh background using the global mesh tokens
+@mixin mesh-bg {
+  background-color: var(--background);
+  background-image: var(--gradient-mesh);
+  background-attachment: fixed;
+}
+
+// Sheen sweep used on primary buttons / CTAs
+@mixin sheen($color: rgba(255, 255, 255, 0.35)) {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-130%) skewX(-18deg);
+    background: linear-gradient(90deg, transparent, $color, transparent);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    transform: translateX(130%) skewX(-18deg);
+  }
+}
+
+// Skeleton shimmer background
+@mixin skeleton-shimmer {
+  background: var(--surface-muted);
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-muted) 0%,
+    rgba(255, 255, 255, 0.32) 50%,
+    var(--surface-muted) 100%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin text-truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// Responsive breakpoints
+@mixin respond($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (max-width: 640px) { @content; }
+  } @else if $breakpoint == 'md' {
+    @media (max-width: 900px) { @content; }
+  } @else if $breakpoint == 'lg' {
+    @media (max-width: 1200px) { @content; }
+  }
+}
