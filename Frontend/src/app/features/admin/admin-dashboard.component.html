@@ -1,0 +1,99 @@
+<div class="admin-page">
+  <div class="admin-head">
+    <div>
+      <span class="eyebrow">Admin console</span>
+      <h1>Platform overview</h1>
+      <p>Monitor users, predictions and system health at a glance.</p>
+    </div>
+    <button mat-stroked-button routerLink="/app/admin/users">
+      <mat-icon>group</mat-icon> Manage users
+    </button>
+  </div>
+
+  @if (stats(); as s) {
+    <div class="stats-grid">
+      <app-stat-card label="Total users" icon="group" tone="secondary" [loading]="loading()">
+        {{ s.totalUsers }}
+      </app-stat-card>
+      <app-stat-card label="Total predictions" icon="insights" tone="primary" [loading]="loading()">
+        {{ s.totalPredictions }}
+      </app-stat-card>
+      <app-stat-card label="Predictions this week" icon="schedule" tone="accent" [loading]="loading()">
+        {{ s.predictionsThisWeek }}
+      </app-stat-card>
+      <app-stat-card label="Average risk score" icon="speed" tone="warning" [loading]="loading()">
+        {{ s.avgRiskScore }}
+      </app-stat-card>
+    </div>
+
+    <div class="admin-grid">
+      <div>
+        <div class="card">
+          <h2><mat-icon>pie_chart</mat-icon> Risk distribution</h2>
+          <p class="card-sub">Share of predictions by risk level across the platform.</p>
+          <app-chart
+            kind="doughnut"
+            [labels]="riskDistribution().labels"
+            [datasets]="[{
+              data: riskDistribution().values,
+              backgroundColor: ['#43A047', '#F9A825', '#E53935'],
+              borderWidth: 0,
+            }]"
+            height="260px"
+            [options]="{
+              cutout: '68%',
+              plugins: {
+                legend: { display: false },
+              },
+            }"
+          ></app-chart>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="swatch" style="background: #43A047"></span> Low</span>
+            <span class="legend-item"><span class="swatch" style="background: #F9A825"></span> Medium</span>
+            <span class="legend-item"><span class="swatch" style="background: #E53935"></span> High</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><mat-icon>monitor_heart</mat-icon> Quick insights</h2>
+          <p class="card-sub">Key operational numbers for your team.</p>
+          <div class="insight-rows">
+            <div class="insight-row">
+              <span><mat-icon>favorite</mat-icon> High-risk predictions</span>
+              <strong class="danger-text">{{ s.highRiskPredictions }}</strong>
+            </div>
+            <div class="insight-row">
+              <span><mat-icon>person</mat-icon> Active patients</span>
+              <strong>{{ s.patients }}</strong>
+            </div>
+            <div class="insight-row">
+              <span><mat-icon>shield</mat-icon> Admin accounts</span>
+              <strong>{{ s.admins }}</strong>
+            </div>
+            <div class="insight-row">
+              <span><mat-icon>person_add</mat-icon> New users this month</span>
+              <strong>{{ s.newUsersThisMonth }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><mat-icon>bolt</mat-icon> Recent activity</h2>
+        <p class="card-sub">Latest events across the platform.</p>
+        <ul class="activity-feed">
+          @for (a of activities(); track a.id) {
+            <li class="activity-item">
+              <span class="activity-icon"><mat-icon>{{ a.icon }}</mat-icon></span>
+              <div class="activity-body">
+                <strong>{{ a.user }}</strong>
+                <p>{{ a.action }} · {{ a.target }}</p>
+                <time>{{ a.createdAt | date: 'MMM d, h:mm a' }}</time>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+</div>

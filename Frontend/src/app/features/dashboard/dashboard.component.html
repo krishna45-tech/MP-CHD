@@ -1,0 +1,235 @@
+<!-- Welcome banner -->
+<section class="welcome-card">
+  <div class="welcome-glow"></div>
+  <div class="welcome-copy">
+    <span class="welcome-chip">
+      <span class="pulse-dot"></span> {{ greeting() }}, {{ user()?.firstName }}
+    </span>
+    <h1>How is your heart today?</h1>
+    <p>
+      Your latest assessment shows a <strong>{{ summary()?.riskLevel | riskLabel }}</strong>
+      with a health score of <strong>{{ summary()?.healthScore }}/100</strong>.
+      Run a new prediction or review your insights below.
+    </p>
+    <div class="welcome-actions">
+      <button mat-flat-button color="primary" (click)="goPredict()">
+        <mat-icon>monitor_heart</mat-icon> New prediction
+      </button>
+      <button mat-stroked-button (click)="openAllNotifications()">
+        <mat-icon>insights</mat-icon> View insights
+      </button>
+    </div>
+  </div>
+  <div class="welcome-art" aria-hidden="true">
+    <svg viewBox="0 0 260 200">
+      <path d="M10 140 L55 140 L80 90 L120 170 L150 110 L175 140 L250 140"
+            fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10 140 L55 140 L80 90 L120 170 L150 110 L175 140 L250 140"
+            fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+            stroke-dasharray="420" stroke-dashoffset="0" opacity="0.25"/>
+    </svg>
+    <div class="heart-pulse">
+      <mat-icon>favorite</mat-icon>
+    </div>
+  </div>
+</section>
+
+<!-- Stat cards -->
+@if (loading()) {
+  <div class="stat-grid">
+    @for (_ of [1, 2, 3, 4]; track $index) {
+      <app-skeleton variant="card"></app-skeleton>
+    }
+  </div>
+} @else {
+  <div class="stat-grid stagger">
+    <app-stat-card label="Health score" icon="favorite" tone="primary" [trend]="4">
+      <app-counter [value]="summary()?.healthScore ?? 0" suffix="/100"></app-counter>
+    </app-stat-card>
+    <app-stat-card [label]="'Risk: ' + (summary()?.riskLevel | riskLabel)" icon="speed" [tone]="summary()?.riskLevel === 'high' ? 'danger' : summary()?.riskLevel === 'medium' ? 'warning' : 'accent'" [trend]="summary()?.riskLevel === 'high' ? 12 : summary()?.riskLevel === 'medium' ? 5 : -8">
+      <app-counter [value]="summary()?.riskScore ?? 0" suffix="%"></app-counter>
+    </app-stat-card>
+    <app-stat-card label="Total predictions" icon="history" tone="secondary" [trend]="14" subtitle="all time">
+      <app-counter [value]="summary()?.totalPredictions ?? 0"></app-counter>
+    </app-stat-card>
+    <app-stat-card label="This month" icon="calendar_month" tone="accent" subtitle="predictions this month">
+      <app-counter [value]="summary()?.monthPredictions ?? 0"></app-counter>
+    </app-stat-card>
+  </div>
+}
+
+<!-- Main grid -->
+<div class="dash-grid">
+  <div class="dash-left">
+    <!-- Recent predictions -->
+    <section class="card panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Recent predictions</h2>
+          <p class="panel-sub">Your latest coronary risk assessments</p>
+        </div>
+        <a routerLink="/app/history" class="link-all">
+          View all <mat-icon>arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      @if (loading()) {
+        <app-skeleton variant="list" [rows]="4"></app-skeleton>
+      } @else if (summary()?.recentPredictions?.length) {
+        <div class="recent-list">
+          @for (prediction of summary()?.recentPredictions; track prediction.id) {
+            <button class="recent-row" (click)="viewResult(prediction.id)">
+              <span class="recent-icon" [class.low]="prediction.riskLevel === 'low'" [class.medium]="prediction.riskLevel === 'medium'" [class.high]="prediction.riskLevel === 'high'">
+                <mat-icon>monitor_heart</mat-icon>
+              </span>
+              <span class="recent-main">
+                <strong>{{ prediction.patientName }}</strong>
+                <em>{{ prediction.submittedAt | date: 'MMM d, yyyy · h:mm a' }}</em>
+              </span>
+              <span class="recent-score">
+                <strong>{{ prediction.riskScore }}%</strong>
+                <span class="chip" [ngClass]="prediction.riskLevel | riskClass">{{ prediction.riskLevel | riskLabel }}</span>
+              </span>
+              <mat-icon class="recent-chev">chevron_right</mat-icon>
+            </button>
+          }
+        </div>
+      } @else {
+        <app-empty-state icon="monitor_heart" title="No predictions yet" message="Run your first risk assessment to see results here.">
+          <button mat-flat-button color="primary" (click)="goPredict()">Start prediction</button>
+        </app-empty-state>
+      }
+    </section>
+
+    <!-- Risk trend chart -->
+    <section class="card panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Risk trend</h2>
+          <p class="panel-sub">Your risk score across recent assessments</p>
+        </div>
+        <span class="chip chip-primary">Last 5</span>
+      </div>
+      @if (loading()) {
+        <app-skeleton variant="chart"></app-skeleton>
+      } @else {
+        <app-chart kind="line" [labels]="trendLabels()" [datasets]="trendDatasets()" [options]="trendChartOptions" height="250px"></app-chart>
+      }
+    </section>
+  </div>
+
+  <div class="dash-right">
+    <!-- Health score ring -->
+    <section class="card panel health-panel">
+      <h2 class="panel-title">Health score</h2>
+      <div class="health-ring-wrap">
+        <app-circular-progress [value]="summary()?.healthScore ?? 0" [color]="healthScoreColor()" [size]="170" [strokeWidth]="12">
+          <strong class="ring-value">{{ summary()?.healthScore ?? 0 }}</strong>
+          <span class="ring-label">out of 100</span>
+        </app-circular-progress>
+      </div>
+      <div class="metric-list">
+        @for (metric of summary()?.metrics ?? []; track metric.key) {
+          <div class="metric-row">
+            <div>
+              <strong>{{ metric.label }}</strong>
+              <span class="text-muted">{{ metric.value }} {{ metric.unit }}</span>
+            </div>
+            <span class="metric-status" [class]="'is-' + metric.status">
+              {{ metric.status === 'good' ? 'Good' : metric.status === 'warning' ? 'Watch' : 'High' }}
+            </span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Health tips carousel -->
+    <section class="card panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Daily health tips</h2>
+        <mat-icon class="panel-icon">tips_and_updates</mat-icon>
+      </div>
+      <app-health-tips-carousel [tips]="tips()"></app-health-tips-carousel>
+    </section>
+
+    <!-- Notifications -->
+    <section class="card panel" id="notifications">
+      <div class="panel-head">
+        <h2 class="panel-title">Notifications</h2>
+        @if (recentNotifications().length) {
+          <button class="link-all" (click)="markAllNotificationsRead()">Mark all read</button>
+        }
+      </div>
+      <div class="notif-mini-list">
+        @for (notification of recentNotifications(); track notification.id) {
+          <button class="notif-mini" [class.unread]="!notification.read" (click)="markNotificationRead(notification.id)">
+            <span class="notif-mini-icon" [style.--n-tone]="notification.type === 'success' ? 'var(--success)' : notification.type === 'warning' ? 'var(--warning)' : notification.type === 'danger' ? 'var(--danger)' : 'var(--info)'">
+              <mat-icon>{{ notification.icon }}</mat-icon>
+            </span>
+            <span class="notif-mini-body">
+              <strong>{{ notification.title }}</strong>
+              <em>{{ notification.message }}</em>
+            </span>
+            @if (!notification.read) {
+              <span class="unread-dot"></span>
+            }
+          </button>
+        } @empty {
+          <app-empty-state icon="notifications_off" title="All caught up" message="You have no new notifications."></app-empty-state>
+        }
+      </div>
+    </section>
+
+    <!-- Activity timeline -->
+    <section class="card panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Recent activity</h2>
+      </div>
+      <div class="timeline">
+        @for (activity of activities(); track activity.id) {
+          <div class="timeline-item">
+            <span class="timeline-dot" [style.--a-color]="activity.color"></span>
+            <div class="timeline-body">
+              <p>
+                <strong>{{ activity.actor }}</strong> {{ activity.action }}
+                <span class="text-muted">· {{ activity.target }}</span>
+              </p>
+              <em>{{ activity.createdAt | timeAgo }}</em>
+            </div>
+          </div>
+        } @empty {
+          <app-empty-state icon="timeline" title="No activity yet" message="Your actions will appear here."></app-empty-state>
+        }
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<section class="card panel quick-actions">
+  <div class="panel-head">
+    <h2 class="panel-title">Quick actions</h2>
+  </div>
+  <div class="quick-grid">
+    <button class="quick-action" (click)="onQuickAction('predict')">
+      <span class="qa-icon primary"><mat-icon>add_task</mat-icon></span>
+      <strong>New prediction</strong>
+      <em>Assess current risk</em>
+    </button>
+    <button class="quick-action" (click)="onQuickAction('history')">
+      <span class="qa-icon secondary"><mat-icon>history</mat-icon></span>
+      <strong>View history</strong>
+      <em>All past assessments</em>
+    </button>
+    <button class="quick-action" (click)="onQuickAction('analytics')">
+      <span class="qa-icon accent"><mat-icon>query_stats</mat-icon></span>
+      <strong>Analytics</strong>
+      <em>Explore trends</em>
+    </button>
+    <button class="quick-action" (click)="onQuickAction('profile')">
+      <span class="qa-icon warning"><mat-icon>manage_accounts</mat-icon></span>
+      <strong>Update profile</strong>
+      <em>Keep data current</em>
+    </button>
+  </div>
+</section>

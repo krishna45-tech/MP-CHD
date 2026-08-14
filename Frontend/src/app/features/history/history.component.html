@@ -1,0 +1,130 @@
+<div class="history-page">
+  <div class="history-head">
+    <div>
+      <span class="eyebrow">Your records</span>
+      <h1>Prediction history</h1>
+      <p>Review every heart risk assessment you have run with CardioSight.</p>
+    </div>
+    <button mat-flat-button color="primary" routerLink="/app/predict">
+      <mat-icon>add</mat-icon> New prediction
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="search" placeholder="Search by name, ID or score…" />
+    </mat-form-field>
+
+    <div class="filter-chip-row">
+      @for (opt of [['all', 'All'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']]; track opt[0]) {
+        <button [class.active]="riskFilter.value === opt[0]" (click)="setRiskFilter(opt[0])">
+          {{ opt[1] }}
+        </button>
+      }
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-select [formControl]="sortBy">
+        <mat-option value="submittedAt">Newest first</mat-option>
+        <mat-option value="riskScore">Highest risk</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <div class="table-wrap">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+      <div class="records-table" style="min-height: 320px"></div>
+    </div>
+  } @else if (records().length === 0) {
+    <div class="table-wrap">
+      <app-empty-state
+        icon="history"
+        title="No predictions found"
+        message="You have no assessments matching these filters. Run a new prediction to see results here."
+      >
+        <button mat-flat-button color="primary" routerLink="/app/predict">
+          <mat-icon>favorite</mat-icon> Run prediction
+        </button>
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Report</th>
+              <th>Patient</th>
+              <th>Risk level</th>
+              <th class="hide-mobile">Score</th>
+              <th class="hide-mobile">Confidence</th>
+              <th class="hide-mobile">Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of records(); track r.id) {
+              <tr (click)="openResult(r)" style="cursor: pointer">
+                <td><span class="rec-id">{{ r.id }}</span></td>
+                <td>
+                  <div class="patient-cell">
+                    <span class="patient-avatar">{{ r.patientName.charAt(0) }}</span>
+                    <div>
+                      <strong>{{ r.patientName }}</strong>
+                      <span>{{ r.age }} yrs · {{ r.gender }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="risk-pill" [class]="r.riskLevel">{{ r.riskLevel }}</span>
+                </td>
+                <td class="hide-mobile">
+                  <div class="score-bar">
+                    <div class="bar">
+                      <span
+                        [style.width.%]="r.riskScore"
+                        [style.background]="r.riskLevel === 'high' ? '#E53935' : r.riskLevel === 'medium' ? '#F9A825' : '#43A047'"
+                      ></span>
+                    </div>
+                    <strong>{{ r.riskScore }}</strong>
+                  </div>
+                </td>
+                <td class="hide-mobile">
+                  <span class="status-chip">{{ r.confidence }}%</span>
+                </td>
+                <td class="hide-mobile">
+                  <span style="font-size: 12px; color: var(--text-secondary)">{{ r.submittedAt | date: 'MMM d, yyyy' }}</span>
+                </td>
+                <td>
+                  <div class="row-actions" (click)="$event.stopPropagation()">
+                    <button mat-icon-button matTooltip="View report" (click)="openResult(r)">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button mat-icon-button matTooltip="Delete" color="warn" (click)="deleteRecord(r)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pagination">
+      <span class="pagination-info">
+        Showing {{ records().length }} of {{ total() }} records
+      </span>
+      <div class="pagination-controls">
+        <button (click)="goToPage(page() - 1)" [disabled]="page() === 1">‹</button>
+        @for (p of pages(); track p) {
+          <button [class.active]="page() === p" (click)="goToPage(p)">{{ p }}</button>
+        }
+        <button (click)="goToPage(page() + 1)" [disabled]="page() === totalPages()">›</button>
+      </div>
+    </div>
+  }
+</div>
