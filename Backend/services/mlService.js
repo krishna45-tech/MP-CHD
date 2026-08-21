@@ -1,131 +1,223 @@
 // =============================================================================
 // ML communication service.
-//
-// Sends the validated PredictionInput to the Django ML server (scikit-learn)
-// via axios, and maps its response back to the shape the controllers expect.
-// If the ML server is unreachable, falls back to a deterministic local scoring
-// (mirroring the Angular mock) so the API stays functional during development.
+// Sends Framingham inputs to the Django/scikit-learn ML server.
 // =============================================================================
-const axios = require('axios');
 
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const axios = require("axios");
 
-const ML_URL = (process.env.ML_SERVER_URL || 'http://localhost:8000').replace(/\/$/, '');
+const ML_URL = (process.env.ML_SERVER_URL || "http://localhost:8000").replace(
+  /\/$/,
+  ""
+);
+
 const ML_PREDICT_URL = `${ML_URL}/api/predict`;
 
 // ---------------------------------------------------------------------------
-// Heuristic factor & recommendation builders (shared by both paths).
+// Framingham factors
 // ---------------------------------------------------------------------------
 
 function buildFactors(input) {
   const factors = [];
-  let score = 8;
 
-  const addFactor = (factor, contribution, severity, label, detail) => {
-    if (Math.abs(contribution) < 0.4) return;
-    score += contribution;
-    factors.push({ factor, impact: clamp(contribution, -1, 1), severity, label, detail });
-  };
+  if (input.age >= 55) {
+    factors.push({
+      factor: "Age",
+      impact: 0.8,
+      severity: "high",
+      label: "Age",
+      detail: `${input.age} years`,
+    });
+  }
 
-  const severityOf = {
-    age: (v) => (v > 55 ? 'high' : v > 45 ? 'medium' : 'low'),
-    stress: (v) => (v >= 4 ? 'high' : 'low'),
-    exercise: (v) => (v < 2 ? 'high' : 'low'),
-    bp: (v) => (v > 145 ? 'high' : 'medium'),
-    cholesterol: (v) => (v > 240 ? 'high' : 'medium'),
-    glucose: (v) => (v > 140 ? 'high' : 'medium'),
-    bmi: (v) => (v > 30 ? 'high' : 'medium'),
-  };
+  if (input.currentSmoker === 1) {
+    factors.push({
+      factor: "Smoking",
+      impact: 0.9,
+      severity: "high",
+      label: "Current smoker",
+      detail: `${input.cigsPerDay} cigarettes/day`,
+    });
+  }
 
-  addFactor('Age', (input.age - 35) / 18, severityOf.age(input.age), 'Age', `${input.age} years`);
-  if (input.smoking) addFactor('Smoking', 10, 'high', 'Smoking', 'Tobacco use raises CVD risk substantially');
-  if (input.snoring) addFactor('Snoring', 5, 'medium', 'Snoring', 'Frequent snoring correlates with sleep apnea');
-  addFactor('Stress', (input.stressLevel - 3) * 2.2, severityOf.stress(input.stressLevel), 'Stress', `Level ${input.stressLevel}/5`);
-  addFactor('Exercise', (1 - input.exerciseDaysPerWeek / 7) * 7, severityOf.exercise(input.exerciseDaysPerWeek), 'Physical activity', `${input.exerciseDaysPerWeek} days/week`);
-  if (input.systolicBp > 130) addFactor('Blood pressure', (input.systolicBp - 120) / 12, severityOf.bp(input.systolicBp), 'Systolic BP', `${input.systolicBp} mmHg`);
-  if (input.cholesterol > 200) addFactor('Cholesterol', (input.cholesterol - 190) / 14, severityOf.cholesterol(input.cholesterol), 'Total cholesterol', `${input.cholesterol} mg/dL`);
-  if (input.glucose > 110) addFactor('Blood glucose', (input.glucose - 100) / 12, severityOf.glucose(input.glucose), 'Fasting glucose', `${input.glucose} mg/dL`);
-  if (input.bmi > 25) addFactor('BMI', (input.bmi - 23) / 3, severityOf.bmi(input.bmi), 'Body mass index', `${Number(input.bmi).toFixed(1)}`);
-  if (input.sleepDurationHours < 6 || input.sleepDurationHours > 9)
-    addFactor('Sleep duration', input.sleepDurationHours < 6 ? 6 : 3, 'medium', 'Sleep duration', `${input.sleepDurationHours}h/night`);
-  if (input.sleepQuality <= 2) addFactor('Sleep quality', 4, 'medium', 'Sleep quality', `Rated ${input.sleepQuality}/5`);
-  if (input.sleepDisorder !== 'none') addFactor('Sleep disorder', 9, 'high', 'Sleep disorder', input.sleepDisorder.replace('_', ' '));
-  if (input.alcohol) addFactor('Alcohol', 3, 'low', 'Alcohol', 'Regular alcohol consumption');
+  if (input.sysBP >= 140) {
+    factors.push({
+      factor: "Blood pressure",
+      impact: 0.9,
+      severity: "high",
+      label: "Systolic BP",
+      detail: `${input.sysBP} mmHg`,
+    });
+  }
 
-  return { score: clamp(Math.round(score), 2, 97), factors: factors.slice(0, 6) };
+  if (input.totChol >= 240) {
+    factors.push({
+      factor: "Cholesterol",
+      impact: 0.8,
+      severity: "high",
+      label: "Total cholesterol",
+      detail: `${input.totChol} mg/dL`,
+    });
+  }
+
+  if (input.diabetes === 1) {
+    factors.push({
+      factor: "Diabetes",
+      impact: 0.9,
+      severity: "high",
+      label: "Diabetes",
+      detail: "Present",
+    });
+  }
+
+  if (input.BMI >= 30) {
+    factors.push({
+      factor: "BMI",
+      impact: 0.6,
+      severity: "medium",
+      label: "Body mass index",
+      detail: Number(input.BMI).toFixed(1),
+    });
+  }
+
+  if (input.prevalentStroke === 1) {
+    factors.push({
+      factor: "Stroke history",
+      impact: 0.9,
+      severity: "high",
+      label: "Previous stroke",
+      detail: "Present",
+    });
+  }
+
+  if (input.prevalentHyp === 1) {
+    factors.push({
+      factor: "Hypertension",
+      impact: 0.8,
+      severity: "high",
+      label: "Hypertension",
+      detail: "Present",
+    });
+  }
+
+  if (input.glucose >= 126) {
+    factors.push({
+      factor: "Glucose",
+      impact: 0.7,
+      severity: "high",
+      label: "Blood glucose",
+      detail: `${input.glucose} mg/dL`,
+    });
+  }
+
+  return factors.slice(0, 6);
 }
+
+// ---------------------------------------------------------------------------
+// Recommendations
+// ---------------------------------------------------------------------------
 
 function buildRecommendations(input, level) {
   const recommendations = [];
-  if (level === 'high') {
-    recommendations.push('Consult a cardiologist within the next two weeks for a full cardiac evaluation.');
-    recommendations.push('Begin a doctor-supervised plan to manage blood pressure and lipid levels.');
-  } else if (level === 'medium') {
-    recommendations.push('Schedule a preventive cardiovascular check-up with your primary physician.');
+
+  if (level === "high") {
+    recommendations.push(
+      "Consult a healthcare professional for a cardiovascular evaluation."
+    );
+  } else if (level === "medium") {
+    recommendations.push("Schedule a preventive cardiovascular check-up.");
   }
-  recommendations.push('Perform 150 minutes of moderate aerobic exercise every week (brisk walking, cycling, swimming).');
-  recommendations.push('Follow a heart-healthy DASH-style diet rich in vegetables, whole grains, and omega-3s.');
-  if (input.smoking) recommendations.push('Quit smoking – enrol in a cessation program; risk drops sharply within 1 year.');
-  if (input.sleepDurationHours < 6 || input.sleepQuality <= 2)
-    recommendations.push('Aim for 7–9 hours of quality sleep; address sleep apnea with a sleep study if snoring is frequent.');
-  if (input.stressLevel >= 4) recommendations.push('Practice 10 minutes of mindfulness or deep-breathing daily to reduce stress.');
-  recommendations.push('Monitor blood pressure at home twice a week and log readings before each check-up.');
-  if (input.cholesterol > 200) recommendations.push('Review your lipid profile every 6 months; consider plant sterols and dietary fibre.');
-  if (input.glucose > 110) recommendations.push('Keep fasting glucose below 100 mg/dL with balanced meals and regular physical activity.');
+
+  recommendations.push(
+    "Maintain regular physical activity and a heart-healthy diet."
+  );
+
+  if (input.currentSmoker === 1) {
+    recommendations.push("Consider a smoking-cessation program.");
+  }
+
+  if (input.sysBP >= 140 || input.prevalentHyp === 1) {
+    recommendations.push("Monitor your blood pressure regularly.");
+  }
+
+  if (input.totChol >= 200) {
+    recommendations.push(
+      "Discuss your cholesterol levels with a healthcare professional."
+    );
+  }
+
+  if (input.diabetes === 1 || input.glucose >= 126) {
+    recommendations.push(
+      "Monitor blood glucose and discuss diabetes management with a healthcare professional."
+    );
+  }
+
+  if (input.BMI >= 30) {
+    recommendations.push(
+      "Discuss healthy weight management with a healthcare professional."
+    );
+  }
+
   return [...new Set(recommendations)].slice(0, 6);
 }
 
 // ---------------------------------------------------------------------------
-// Deterministic fallback scoring (used only if the ML server is unreachable).
-// ---------------------------------------------------------------------------
-function computeRisk(input) {
-  const { score, factors } = buildFactors(input);
-  const level = score >= 60 ? 'high' : score >= 35 ? 'medium' : 'low';
-  const confidence = clamp(Math.round(84 + (input.systolicBp % 13) - (input.stressLevel * 2)), 76, 96);
-  return {
-    score,
-    confidence,
-    level,
-    factors,
-    recommendations: buildRecommendations(input, level),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Public API
+// Prediction
 // ---------------------------------------------------------------------------
 
-/**
- * Runs a prediction for the given validated PredictionInput.
- * Returns { riskScore, riskLevel, confidence, diseaseProbability,
- *           recommendations, contributingFactors }.
- */
 async function predict(input) {
   try {
-    const { data } = await axios.post(ML_PREDICT_URL, { features: input }, { timeout: 15000 });
+    const { data } = await axios.post(
+      ML_PREDICT_URL,
+      {
+        features: input,
+      },
+      {
+        timeout: 15000,
+      }
+    );
+
     if (!data || data.success !== true) {
-      throw new Error('ML server returned an invalid response.');
+      throw new Error(
+        data?.message || "ML server returned an invalid response."
+      );
     }
+
+    const probability = Number(data.probability);
+    const riskScore = Number(data.risk_score);
+
+    const riskLevel =
+      data.prediction ||
+      (probability >= 60 ? "high" : probability >= 35 ? "medium" : "low");
+
     return {
-      riskScore: Math.round(data.risk_score),
-      riskLevel: data.prediction,
-      confidence: Math.round(data.confidence),
-      diseaseProbability: Math.round(data.probability),
-      recommendations: buildRecommendations(input, data.prediction),
-      contributingFactors: buildFactors(input).factors,
+      riskScore: Math.round(riskScore),
+
+      riskLevel,
+
+      confidence: Math.round(Number(data.confidence ?? 0)),
+
+      diseaseProbability: Math.round(probability),
+
+      recommendations: buildRecommendations(input, riskLevel),
+
+      contributingFactors: buildFactors(input),
     };
   } catch (err) {
-    console.error(`[mlService] ML server unreachable at ${ML_PREDICT_URL} – using local fallback:`, err.message);
-    const { score, confidence, level, factors, recommendations } = computeRisk(input);
-    return {
-      riskScore: score,
-      riskLevel: level,
-      confidence,
-      diseaseProbability: clamp(score + 3, 3, 99),
-      recommendations,
-      contributingFactors: factors,
-    };
+    console.error(
+      `[mlService] ML prediction failed at ${ML_PREDICT_URL}:`,
+      err.message
+    );
+
+    // IMPORTANT:
+    // Do NOT fall back to the old synthetic algorithm.
+    // CardioSight must use the trained Framingham model.
+
+    throw new Error(
+      "ML prediction service is unavailable. Please make sure the Django ML server is running."
+    );
   }
 }
 
-module.exports = { predict };
+module.exports = {
+  predict,
+};
