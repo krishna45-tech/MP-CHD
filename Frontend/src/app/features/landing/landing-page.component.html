@@ -11,12 +11,21 @@
       <span class="l-brand-name">Cardio<em>Sight</em></span>
     </a>
 
-    <nav class="l-nav" *ngIf="!isMobileMenuOpen()">
-      <a href="#features" class="l-nav-link">Features</a>
-      <a href="#how" class="l-nav-link">How it works</a>
-      <a href="#testimonials" class="l-nav-link">Testimonials</a>
-      <a href="#faq" class="l-nav-link">FAQ</a>
-    </nav>
+    <a href="javascript:void(0)" (click)="scrollToSection('features')" class="l-nav-link">
+  Features
+</a>
+
+<a href="javascript:void(0)" (click)="scrollToSection('how')" class="l-nav-link">
+  How it works
+</a>
+
+<a href="javascript:void(0)" (click)="scrollToSection('testimonials')" class="l-nav-link">
+  Testimonials
+</a>
+
+<a href="javascript:void(0)" (click)="scrollToSection('faq')" class="l-nav-link">
+  FAQ
+</a>
 
     <div class="l-header-actions">
       <button class="icon-btn" (click)="theme.toggle()" [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'">

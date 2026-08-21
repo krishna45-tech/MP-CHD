@@ -19,6 +19,7 @@ interface Feature {
   tone: string;
 }
 
+
 interface Step {
   icon: string;
   title: string;
@@ -123,9 +124,9 @@ const STATS = [
 const GAUGE_LENGTH = 283;
 
 @Component({
-  selector: 'app-landing-page',
-  templateUrl: './landing-page.component.html',
-  styleUrl: './landing-page.component.scss',
+  selector: "app-landing-page",
+  templateUrl: "./landing-page.component.html",
+  styleUrl: "./landing-page.component.scss",
   standalone: true,
   imports: [
     RouterLink,
@@ -146,7 +147,12 @@ export class LandingPageComponent {
   readonly testimonials = TESTIMONIALS;
   readonly faqs = FAQS;
   readonly stats = STATS;
-  readonly trustPeople = ['Aarav Sharma', 'Priya Singh', 'Dr. Meera Nair', 'Rohan Verma'];
+  readonly trustPeople = [
+    "Aarav Sharma",
+    "Priya Singh",
+    "Dr. Meera Nair",
+    "Rohan Verma",
+  ];
   readonly progressBars = [64, 52, 47, 38, 33, 28];
 
   readonly statsVisible = signal(false);
@@ -158,7 +164,7 @@ export class LandingPageComponent {
   }
 
   barLabel(index: number): string {
-    return ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'][index];
+    return ["Feb", "Mar", "Apr", "May", "Jun", "Jul"][index];
   }
 
   toggleMobileMenu(): void {
@@ -170,11 +176,17 @@ export class LandingPageComponent {
   }
 
   goAbout(): void {
-    this.router.navigate(['/app/about']);
+    this.router.navigate(["/app/about"]);
   }
 
-  @HostListener('window:scroll')
+  @HostListener("window:scroll")
   onScroll(): void {
     this.scrolled.set(window.scrollY > 24);
+  }
+  scrollToSection(id: string): void {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 }

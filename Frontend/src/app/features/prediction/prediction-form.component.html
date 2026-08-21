@@ -1,394 +1,857 @@
 <div class="form-page">
+
   <div class="form-head">
     <div>
-      <span class="eyebrow">Risk assessment</span>
-      <h1>New prediction</h1>
-      <p>Answer a few guided steps. CardioSight will score your coronary heart disease risk instantly.</p>
-    </div>
-    <div class="form-estimate">
-      <mat-icon>schedule</mat-icon>
-      <div>
-        <strong>~3 min</strong>
-        <span>Average completion</span>
-      </div>
+      <span class="eyebrow">
+        FRAMINGHAM RISK ASSESSMENT
+      </span>
+
+      <h1>New Prediction</h1>
+
+      <p>
+        Enter the patient's clinical information
+        to estimate 10-year coronary heart disease risk.
+      </p>
     </div>
   </div>
 
-  <!-- Stepper -->
+  <!-- STEPPER -->
+
   <div class="stepper">
+
     <div class="stepper-track">
-      <div class="stepper-fill" [style.width.%]="progress()"></div>
+      <div
+        class="stepper-fill"
+        [style.width.%]="progress()">
+      </div>
     </div>
+
     <div class="stepper-steps">
+
       @for (step of steps; track step.id) {
+
         <button
+          type="button"
           class="step-chip"
           [class.active]="isCurrent(step.id)"
           [class.done]="isDone(step.id)"
-          [class.allow]="isDone(step.id) || step.id === 1"
           (click)="goToStep(step.id)"
         >
+
           <span class="step-icon">
-            @if (isDone(step.id)) {
-              <mat-icon>check</mat-icon>
-            } @else {
-              <mat-icon>{{ step.icon }}</mat-icon>
-            }
+            <mat-icon>
+              {{
+                isDone(step.id)
+                  ? 'check'
+                  : step.icon
+              }}
+            </mat-icon>
           </span>
+
           <span class="step-meta">
-            <strong>{{ step.title }}</strong>
-            <em>{{ step.subtitle }}</em>
+            <strong>
+              {{ step.title }}
+            </strong>
+
+            <em>
+              {{ step.subtitle }}
+            </em>
           </span>
+
         </button>
+
       }
+
     </div>
+
   </div>
 
-  <!-- Step content -->
-  <div class="form-card" [ngSwitch]="currentStep()">
-    <!-- 1 · Personal -->
-    <section *ngSwitchCase="1" class="step-body animate-fade">
-      <div class="step-intro">
-        <div class="step-intro-icon"><mat-icon>person</mat-icon></div>
-        <div>
-          <h2>Personal information</h2>
-          <p>Basic metrics help the model calibrate risk against population baselines.</p>
-        </div>
-      </div>
 
-      <div class="fields-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Age</mat-label>
-          <mat-icon matPrefix>cake</mat-icon>
-          <input matInput type="number" formControlName="age" min="18" max="100" />
-          <mat-error *ngIf="form.controls.age.hasError('required')">Required</mat-error>
-          <mat-error *ngIf="form.controls.age.hasError('min') || form.controls.age.hasError('max')">18–100 years</mat-error>
-        </mat-form-field>
+  <!-- FORM -->
 
-        <mat-form-field appearance="outline">
-          <mat-label>Gender</mat-label>
-          <mat-icon matPrefix>wc</mat-icon>
-          <mat-select formControlName="gender">
-            <mat-option value="male">Male</mat-option>
-            <mat-option value="female">Female</mat-option>
-          </mat-select>
-        </mat-form-field>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+  >
 
-        <mat-form-field appearance="outline">
-          <mat-label>Weight</mat-label>
-          <mat-icon matPrefix>scale</mat-icon>
-          <input matInput type="number" formControlName="weightKg" min="30" max="250" />
-          <span matTextSuffix>kg</span>
-          <mat-error *ngIf="form.controls.weightKg.hasError('required')">Required</mat-error>
-        </mat-form-field>
+    <div
+      class="form-card"
+      [ngSwitch]="currentStep()"
+    >
 
-        <mat-form-field appearance="outline">
-          <mat-label>Height</mat-label>
-          <mat-icon matPrefix>straighten</mat-icon>
-          <input matInput type="number" formControlName="heightCm" min="120" max="230" />
-          <span matTextSuffix>cm</span>
-          <mat-error *ngIf="form.controls.heightCm.hasError('required')">Required</mat-error>
-        </mat-form-field>
-      </div>
+      <!-- ========================================================= -->
+      <!-- STEP 1 -->
+      <!-- ========================================================= -->
 
-      <div class="bmi-box">
-        <div class="bmi-left">
-          <span class="bmi-icon"><mat-icon>calculate</mat-icon></span>
-          <div>
-            <strong>Your BMI</strong>
-            <span>Auto-calculated from height & weight</span>
+      <section
+        *ngSwitchCase="1"
+        class="step-body"
+      >
+
+        <div class="step-intro">
+
+          <div class="step-intro-icon">
+            <mat-icon>
+              person
+            </mat-icon>
           </div>
-        </div>
-        <div class="bmi-value">
-          <strong>{{ bmi() }}</strong>
-          <span class="chip" [class]="bmi() > 30 ? 'badge-high' : bmi() > 25 ? 'badge-medium' : 'badge-low'">
-            {{ bmi() > 30 ? 'Obese' : bmi() > 25 ? 'Overweight' : bmi() < 18.5 ? 'Underweight' : 'Healthy' }}
-          </span>
-        </div>
-      </div>
-    </section>
 
-    <!-- 2 · Lifestyle -->
-    <section *ngSwitchCase="2" class="step-body animate-fade">
-      <div class="step-intro">
-        <div class="step-intro-icon"><mat-icon>self_improvement</mat-icon></div>
-        <div>
-          <h2>Lifestyle</h2>
-          <p>Your daily habits are powerful predictors of cardiovascular health.</p>
-        </div>
-      </div>
-
-      <div class="toggle-row">
-        <div class="toggle-label">
-          <span class="toggle-icon smoking"><mat-icon>smoke_free</mat-icon></span>
           <div>
-            <strong>Smoking</strong>
-            <em>Current tobacco use</em>
-          </div>
-        </div>
-        <mat-slide-toggle color="primary" formControlName="smoking"></mat-slide-toggle>
-      </div>
+            <h2>
+              Personal Information
+            </h2>
 
-      <div class="toggle-row">
-        <div class="toggle-label">
-          <span class="toggle-icon alcohol"><mat-icon>sports_bar</mat-icon></span>
+            <p>
+              Basic demographic information.
+            </p>
+          </div>
+
+        </div>
+
+
+        <div class="fields-grid">
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Age
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              formControlName="age"
+            />
+
+            <mat-hint>
+              18–100 years
+            </mat-hint>
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Sex
+            </mat-label>
+
+            <mat-select
+              formControlName="male"
+            >
+
+              <mat-option [value]="1">
+                Male
+              </mat-option>
+
+              <mat-option [value]="0">
+                Female
+              </mat-option>
+
+            </mat-select>
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Education level
+            </mat-label>
+
+            <mat-select
+              formControlName="education"
+            >
+
+              <mat-option [value]="1">
+                Level 1
+              </mat-option>
+
+              <mat-option [value]="2">
+                Level 2
+              </mat-option>
+
+              <mat-option [value]="3">
+                Level 3
+              </mat-option>
+
+              <mat-option [value]="4">
+                Level 4
+              </mat-option>
+
+            </mat-select>
+
+          </mat-form-field>
+
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================= -->
+      <!-- STEP 2 -->
+      <!-- ========================================================= -->
+
+      <section
+        *ngSwitchCase="2"
+        class="step-body"
+      >
+
+        <div class="step-intro">
+
+          <div class="step-intro-icon">
+            <mat-icon>
+              smoking_rooms
+            </mat-icon>
+          </div>
+
           <div>
-            <strong>Alcohol consumption</strong>
-            <em>Regular drinking habit</em>
-          </div>
-        </div>
-        <mat-slide-toggle color="primary" formControlName="alcohol"></mat-slide-toggle>
-      </div>
+            <h2>
+              Smoking
+            </h2>
 
-      @if (form.controls.alcohol.value) {
-        <mat-form-field appearance="outline" class="full-field">
-          <mat-label>Alcohol level</mat-label>
-          <mat-select formControlName="alcoholLevel">
-            <mat-option value="light">Light (≤1 drink/day)</mat-option>
-            <mat-option value="moderate">Moderate (2–3 drinks/day)</mat-option>
-            <mat-option value="heavy">Heavy (>3 drinks/day)</mat-option>
-          </mat-select>
+            <p>
+              Smoking information used by the Framingham model.
+            </p>
+          </div>
+
+        </div>
+
+
+        <div class="toggle-row">
+
+          <div>
+            <strong>
+              Current smoker
+            </strong>
+
+            <em>
+              Does the patient currently smoke?
+            </em>
+          </div>
+
+          <mat-slide-toggle
+            color="primary"
+            [checked]="
+              form.controls.currentSmoker.value === 1
+            "
+            (change)="
+              form.controls.currentSmoker.setValue(
+                $event.checked ? 1 : 0
+              )
+            "
+          >
+          </mat-slide-toggle>
+
+        </div>
+
+
+        <mat-form-field
+          appearance="outline"
+          class="full-field"
+        >
+
+          <mat-label>
+            Cigarettes per day
+          </mat-label>
+
+          <input
+            matInput
+            type="number"
+            min="0"
+            max="100"
+            formControlName="cigsPerDay"
+          />
+
         </mat-form-field>
+
+      </section>
+
+
+      <!-- ========================================================= -->
+      <!-- STEP 3 -->
+      <!-- ========================================================= -->
+
+      <section
+        *ngSwitchCase="3"
+        class="step-body"
+      >
+
+        <div class="step-intro">
+
+          <div class="step-intro-icon">
+            <mat-icon>
+              medical_services
+            </mat-icon>
+          </div>
+
+          <div>
+
+            <h2>
+              Medical History
+            </h2>
+
+            <p>
+              Select the conditions that apply to the patient.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="toggle-row">
+
+          <div>
+            <strong>
+              Blood pressure medication
+            </strong>
+
+            <em>
+              Currently taking BP medication?
+            </em>
+          </div>
+
+          <mat-slide-toggle
+            color="primary"
+            [checked]="
+              form.controls.BPMeds.value === 1
+            "
+            (change)="
+              form.controls.BPMeds.setValue(
+                $event.checked ? 1 : 0
+              )
+            "
+          >
+          </mat-slide-toggle>
+
+        </div>
+
+
+        <div class="toggle-row">
+
+          <div>
+            <strong>
+              Previous stroke
+            </strong>
+
+            <em>
+              History of stroke?
+            </em>
+          </div>
+
+          <mat-slide-toggle
+            color="primary"
+            [checked]="
+              form.controls.prevalentStroke.value === 1
+            "
+            (change)="
+              form.controls.prevalentStroke.setValue(
+                $event.checked ? 1 : 0
+              )
+            "
+          >
+          </mat-slide-toggle>
+
+        </div>
+
+
+        <div class="toggle-row">
+
+          <div>
+            <strong>
+              Hypertension
+            </strong>
+
+            <em>
+              History of hypertension?
+            </em>
+          </div>
+
+          <mat-slide-toggle
+            color="primary"
+            [checked]="
+              form.controls.prevalentHyp.value === 1
+            "
+            (change)="
+              form.controls.prevalentHyp.setValue(
+                $event.checked ? 1 : 0
+              )
+            "
+          >
+          </mat-slide-toggle>
+
+        </div>
+
+
+        <div class="toggle-row">
+
+          <div>
+            <strong>
+              Diabetes
+            </strong>
+
+            <em>
+              History of diabetes?
+            </em>
+          </div>
+
+          <mat-slide-toggle
+            color="primary"
+            [checked]="
+              form.controls.diabetes.value === 1
+            "
+            (change)="
+              form.controls.diabetes.setValue(
+                $event.checked ? 1 : 0
+              )
+            "
+          >
+          </mat-slide-toggle>
+
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================= -->
+      <!-- STEP 4 -->
+      <!-- ========================================================= -->
+
+      <section
+        *ngSwitchCase="4"
+        class="step-body"
+      >
+
+        <div class="step-intro">
+
+          <div class="step-intro-icon">
+
+            <mat-icon>
+              monitor_heart
+            </mat-icon>
+
+          </div>
+
+          <div>
+
+            <h2>
+              Clinical Measurements
+            </h2>
+
+            <p>
+              Enter the patient's latest clinical readings.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="fields-grid">
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Total cholesterol
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              formControlName="totChol"
+            />
+
+            <span matTextSuffix>
+              mg/dL
+            </span>
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Systolic BP
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              formControlName="sysBP"
+            />
+
+            <span matTextSuffix>
+              mmHg
+            </span>
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Diastolic BP
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              formControlName="diaBP"
+            />
+
+            <span matTextSuffix>
+              mmHg
+            </span>
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              BMI
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              step="0.1"
+              formControlName="BMI"
+            />
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Heart rate
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              formControlName="heartRate"
+            />
+
+            <span matTextSuffix>
+              bpm
+            </span>
+
+          </mat-form-field>
+
+
+          <mat-form-field appearance="outline">
+
+            <mat-label>
+              Glucose
+            </mat-label>
+
+            <input
+              matInput
+              type="number"
+              formControlName="glucose"
+            />
+
+            <span matTextSuffix>
+              mg/dL
+            </span>
+
+          </mat-form-field>
+
+        </div>
+
+      </section>
+
+
+      <!-- ========================================================= -->
+      <!-- STEP 5 -->
+      <!-- ========================================================= -->
+
+      <section
+        *ngSwitchCase="5"
+        class="step-body"
+      >
+
+        <div class="step-intro">
+
+          <div class="step-intro-icon">
+            <mat-icon>
+              fact_check
+            </mat-icon>
+          </div>
+
+          <div>
+
+            <h2>
+              Review Information
+            </h2>
+
+            <p>
+              Confirm the information before running the model.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="review-grid">
+
+          <div class="review-group">
+
+            <h3>
+              Personal
+            </h3>
+
+            <ul>
+
+              <li>
+                <span>Age</span>
+                <strong>
+                  {{ form.controls.age.value }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Sex</span>
+                <strong>
+                  {{
+                    form.controls.male.value === 1
+                      ? 'Male'
+                      : 'Female'
+                  }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Education</span>
+                <strong>
+                  {{ form.controls.education.value }}
+                </strong>
+              </li>
+
+            </ul>
+
+          </div>
+
+
+          <div class="review-group">
+
+            <h3>
+              Smoking
+            </h3>
+
+            <ul>
+
+              <li>
+                <span>Current smoker</span>
+
+                <strong>
+                  {{
+                    form.controls.currentSmoker.value === 1
+                      ? 'Yes'
+                      : 'No'
+                  }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Cigarettes/day</span>
+
+                <strong>
+                  {{ form.controls.cigsPerDay.value }}
+                </strong>
+              </li>
+
+            </ul>
+
+          </div>
+
+
+          <div class="review-group">
+
+            <h3>
+              Medical History
+            </h3>
+
+            <ul>
+
+              <li>
+                <span>BP medication</span>
+                <strong>
+                  {{
+                    form.controls.BPMeds.value
+                      ? 'Yes'
+                      : 'No'
+                  }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Previous stroke</span>
+                <strong>
+                  {{
+                    form.controls.prevalentStroke.value
+                      ? 'Yes'
+                      : 'No'
+                  }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Hypertension</span>
+                <strong>
+                  {{
+                    form.controls.prevalentHyp.value
+                      ? 'Yes'
+                      : 'No'
+                  }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Diabetes</span>
+                <strong>
+                  {{
+                    form.controls.diabetes.value
+                      ? 'Yes'
+                      : 'No'
+                  }}
+                </strong>
+              </li>
+
+            </ul>
+
+          </div>
+
+
+          <div class="review-group">
+
+            <h3>
+              Clinical
+            </h3>
+
+            <ul>
+
+              <li>
+                <span>Cholesterol</span>
+                <strong>
+                  {{ form.controls.totChol.value }}
+                  mg/dL
+                </strong>
+              </li>
+
+              <li>
+                <span>Blood pressure</span>
+                <strong>
+                  {{ form.controls.sysBP.value }}
+                  /
+                  {{ form.controls.diaBP.value }}
+                </strong>
+              </li>
+
+              <li>
+                <span>BMI</span>
+                <strong>
+                  {{ form.controls.BMI.value }}
+                </strong>
+              </li>
+
+              <li>
+                <span>Heart rate</span>
+                <strong>
+                  {{ form.controls.heartRate.value }}
+                  bpm
+                </strong>
+              </li>
+
+              <li>
+                <span>Glucose</span>
+                <strong>
+                  {{ form.controls.glucose.value }}
+                  mg/dL
+                </strong>
+              </li>
+
+            </ul>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- NAVIGATION -->
+
+    <div class="form-nav">
+
+      <button
+        type="button"
+        mat-stroked-button
+        (click)="back()"
+        [disabled]="isFirstStep()"
+      >
+
+        <mat-icon>
+          arrow_back
+        </mat-icon>
+
+        Back
+
+      </button>
+
+
+      @if (!isLastStep()) {
+
+        <button
+          type="button"
+          mat-flat-button
+          color="primary"
+          (click)="next()"
+        >
+
+          Continue
+
+          <mat-icon>
+            arrow_forward
+          </mat-icon>
+
+        </button>
+
+      } @else {
+
+        <button
+          type="submit"
+          mat-flat-button
+          color="primary"
+          class="predict-btn"
+          [disabled]="submitting()"
+        >
+
+          @if (submitting()) {
+
+            Analyzing...
+
+          } @else {
+            <ng-container>
+              <mat-icon>
+                favorite
+              </mat-icon>
+              <span>Run Prediction</span>
+            </ng-container>
+          }
+
+        </button>
+
       }
 
-      <div class="slider-field">
-        <div class="slider-head">
-          <strong>Exercise</strong>
-          <span class="slider-value">{{ form.controls.exerciseDaysPerWeek.value }} days/week</span>
-        </div>
-        <mat-slider min="0" max="7" step="1" discrete showTickMarks color="primary">
-          <input matSliderThumb formControlName="exerciseDaysPerWeek" />
-        </mat-slider>
-        <div class="slider-range">
-          <span>Sedentary</span>
-          <span>Very active</span>
-        </div>
-      </div>
+    </div>
 
-      <div class="slider-field">
-        <div class="slider-head">
-          <strong>Stress level</strong>
-          <span class="slider-value">{{ stressLabel(form.controls.stressLevel.value) }}</span>
-        </div>
-        <mat-slider min="1" max="5" step="1" discrete color="primary">
-          <input matSliderThumb formControlName="stressLevel" />
-        </mat-slider>
-        <div class="slider-range">
-          <span>Relaxed</span>
-          <span>Overwhelmed</span>
-        </div>
-      </div>
-    </section>
+  </form>
 
-    <!-- 3 · Clinical -->
-    <section *ngSwitchCase="3" class="step-body animate-fade">
-      <div class="step-intro">
-        <div class="step-intro-icon"><mat-icon>monitor_heart</mat-icon></div>
-        <div>
-          <h2>Clinical parameters</h2>
-          <p>Use your latest readings from a recent check-up or home monitor.</p>
-        </div>
-      </div>
-
-      <div class="fields-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Systolic BP</mat-label>
-          <mat-icon matPrefix>bloodtype</mat-icon>
-          <input matInput type="number" formControlName="systolicBp" min="70" max="260" />
-          <span matTextSuffix>mmHg</span>
-          <mat-error *ngIf="form.controls.systolicBp.hasError('required')">Required</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Diastolic BP</mat-label>
-          <mat-icon matPrefix>bloodtype</mat-icon>
-          <input matInput type="number" formControlName="diastolicBp" min="40" max="160" />
-          <span matTextSuffix>mmHg</span>
-          <mat-error *ngIf="form.controls.diastolicBp.hasError('required')">Required</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Total cholesterol</mat-label>
-          <mat-icon matPrefix>water_drop</mat-icon>
-          <input matInput type="number" formControlName="cholesterol" min="80" max="400" />
-          <span matTextSuffix>mg/dL</span>
-          <mat-error *ngIf="form.controls.cholesterol.hasError('required')">Required</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Fasting glucose</mat-label>
-          <mat-icon matPrefix>bloodtype</mat-icon>
-          <input matInput type="number" formControlName="glucose" min="50" max="300" />
-          <span matTextSuffix>mg/dL</span>
-          <mat-error *ngIf="form.controls.glucose.hasError('required')">Required</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="span-2">
-          <mat-label>Resting heart rate</mat-label>
-          <mat-icon matPrefix>favorite</mat-icon>
-          <input matInput type="number" formControlName="heartRate" min="35" max="220" />
-          <span matTextSuffix>bpm</span>
-          <mat-error *ngIf="form.controls.heartRate.hasError('required')">Required</mat-error>
-        </mat-form-field>
-      </div>
-
-      <div class="clinical-hint">
-        <mat-icon>info</mat-icon>
-        <span>Don't know a value? Leave the default — or check your latest lab report.</span>
-      </div>
-    </section>
-
-    <!-- 4 · Sleep -->
-    <section *ngSwitchCase="4" class="step-body animate-fade">
-      <div class="step-intro">
-        <div class="step-intro-icon"><mat-icon>bedtime</mat-icon></div>
-        <div>
-          <h2>Sleep information</h2>
-          <p>Sleep quality is a uniquely powerful signal — CardioSight weighs it heavily.</p>
-        </div>
-      </div>
-
-      <div class="slider-field">
-        <div class="slider-head">
-          <strong>Sleep duration</strong>
-          <span class="slider-value">{{ form.controls.sleepDurationHours.value }}h · {{ sleepHrsLabel(form.controls.sleepDurationHours.value) }}</span>
-        </div>
-        <mat-slider min="3" max="12" step="0.5" discrete color="primary">
-          <input matSliderThumb formControlName="sleepDurationHours" />
-        </mat-slider>
-        <div class="slider-range">
-          <span>3h</span>
-          <span>7–9h ideal</span>
-          <span>12h</span>
-        </div>
-      </div>
-
-      <div class="slider-field">
-        <div class="slider-head">
-          <strong>Sleep quality</strong>
-          <span class="slider-value">{{ qualityLabel(form.controls.sleepQuality.value) }}</span>
-        </div>
-        <mat-slider min="1" max="5" step="1" discrete color="primary">
-          <input matSliderThumb formControlName="sleepQuality" />
-        </mat-slider>
-        <div class="slider-range">
-          <span>Very poor</span>
-          <span>Excellent</span>
-        </div>
-      </div>
-
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Sleep disorder</mat-label>
-        <mat-icon matPrefix>medical_services</mat-icon>
-        <mat-select formControlName="sleepDisorder">
-          <mat-option value="none">None diagnosed</mat-option>
-          <mat-option value="insomnia">Insomnia</mat-option>
-          <mat-option value="sleep_apnea">Sleep apnea</mat-option>
-          <mat-option value="narcolepsy">Narcolepsy</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <div class="toggle-row">
-        <div class="toggle-label">
-          <span class="toggle-icon snore"><mat-icon>night_shelter</mat-icon></span>
-          <div>
-            <strong>Frequent snoring</strong>
-            <em>Loud snoring most nights</em>
-          </div>
-        </div>
-        <mat-slide-toggle color="primary" formControlName="snoring"></mat-slide-toggle>
-      </div>
-    </section>
-
-    <!-- 5 · Review -->
-    <section *ngSwitchCase="5" class="step-body animate-fade">
-      <div class="step-intro">
-        <div class="step-intro-icon"><mat-icon>fact_check</mat-icon></div>
-        <div>
-          <h2>Review your data</h2>
-          <p>Everything looks good? Run the ML analysis to see your heart risk.</p>
-        </div>
-      </div>
-
-      <div class="review-grid">
-        <div class="review-group">
-          <h3><mat-icon>person</mat-icon> Personal</h3>
-          <ul>
-            <li><span>Age</span><strong>{{ form.controls.age.value }}</strong></li>
-            <li><span>Gender</span><strong>{{ form.controls.gender.value | titlecase }}</strong></li>
-            <li><span>Weight</span><strong>{{ form.controls.weightKg.value }} kg</strong></li>
-            <li><span>Height</span><strong>{{ form.controls.heightCm.value }} cm</strong></li>
-            <li><span>BMI</span><strong>{{ bmi() }}</strong></li>
-          </ul>
-        </div>
-
-        <div class="review-group">
-          <h3><mat-icon>self_improvement</mat-icon> Lifestyle</h3>
-          <ul>
-            <li><span>Smoking</span><strong>{{ form.controls.smoking.value ? 'Yes' : 'No' }}</strong></li>
-            <li><span>Alcohol</span><strong>{{ form.controls.alcohol.value ? (form.controls.alcoholLevel.value | titlecase) : 'No' }}</strong></li>
-            <li><span>Exercise</span><strong>{{ form.controls.exerciseDaysPerWeek.value }} days/week</strong></li>
-            <li><span>Stress</span><strong>{{ stressLabel(form.controls.stressLevel.value) }}</strong></li>
-          </ul>
-        </div>
-
-        <div class="review-group">
-          <h3><mat-icon>monitor_heart</mat-icon> Clinical</h3>
-          <ul>
-            <li><span>Blood pressure</span><strong>{{ form.controls.systolicBp.value }}/{{ form.controls.diastolicBp.value }}</strong></li>
-            <li><span>Cholesterol</span><strong>{{ form.controls.cholesterol.value }} mg/dL</strong></li>
-            <li><span>Glucose</span><strong>{{ form.controls.glucose.value }} mg/dL</strong></li>
-            <li><span>Heart rate</span><strong>{{ form.controls.heartRate.value }} bpm</strong></li>
-          </ul>
-        </div>
-
-        <div class="review-group">
-          <h3><mat-icon>bedtime</mat-icon> Sleep</h3>
-          <ul>
-            <li><span>Duration</span><strong>{{ form.controls.sleepDurationHours.value }}h</strong></li>
-            <li><span>Quality</span><strong>{{ qualityLabel(form.controls.sleepQuality.value) }}</strong></li>
-            <li><span>Disorder</span><strong>{{ form.controls.sleepDisorder.value | titlecase }}</strong></li>
-            <li><span>Snoring</span><strong>{{ form.controls.snoring.value ? 'Yes' : 'No' }}</strong></li>
-          </ul>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Navigation -->
-  <div class="form-nav">
-    <button mat-stroked-button (click)="back()" [disabled]="isFirstStep()">
-      <mat-icon>arrow_back</mat-icon> Back
-    </button>
-    @if (!isLastStep()) {
-      <button mat-flat-button color="primary" (click)="next()">
-        Continue <mat-icon>arrow_forward</mat-icon>
-      </button>
-    } @else {
-      <button mat-flat-button color="primary" class="predict-btn" [disabled]="submitting()" (click)="onSubmit()">
-        @if (submitting()) {
-          <span class="btn-spinner"></span> Analyzing your heart…
-        } @else {
-          <ng-container>
-            <mat-icon>favorite</mat-icon> Run prediction
-          </ng-container>
-        }
-      </button>
-    }
-  </div>
 </div>
-
-<!-- Full-screen analysing overlay -->
-@if (submitting()) {
-  <div class="analysing-overlay">
-    <div class="analysing-card">
-      <div class="heart-wrap">
-        <span class="pulse-ring"></span>
-        <span class="heart"><mat-icon>favorite</mat-icon></span>
-      </div>
-      <h3>Analyzing your heart health…</h3>
-      <p>Our ML engine is evaluating 15+ parameters and sleep signals.</p>
-      <div class="analysing-bar"><span></span></div>
-    </div>
-  </div>
-}

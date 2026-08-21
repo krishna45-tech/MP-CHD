@@ -26,7 +26,7 @@ export class AnalyticsService {
       ? Math.round(records.reduce((sum, r) => sum + r.riskScore, 0) / total)
       : 0;
 
-    const male = records.filter((r) => r.gender === 'male').length;
+    const male = records.filter((r) => r.male === 1).length;
     const female = total - male;
 
     const ageBuckets = ['18-30', '31-40', '41-50', '51-60', '60+'];

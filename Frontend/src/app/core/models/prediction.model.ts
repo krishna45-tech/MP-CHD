@@ -1,75 +1,68 @@
 // =============================================================================
 // Prediction domain models.
 // =============================================================================
-import type { RiskLevel } from './common.model';
 
-export type Gender = 'male' | 'female';
-export type SleepDisorder = 'none' | 'insomnia' | 'sleep_apnea' | 'narcolepsy';
+import type { RiskLevel } from "./common.model";
 
-/** Raw inputs collected by the multi-step prediction form. */
+/** Raw Framingham inputs collected by the prediction form. */
 export interface PredictionInput {
   // Personal
+  male: 0 | 1;
   age: number;
-  gender: Gender;
-  weightKg: number;
-  heightCm: number;
-  bmi: number;
+  education: 1 | 2 | 3 | 4;
 
   // Lifestyle
-  smoking: boolean;
-  smokingYears?: number;
-  alcohol: boolean;
-  alcoholLevel?: 'none' | 'light' | 'moderate' | 'heavy';
-  exerciseDaysPerWeek: number;
-  stressLevel: 1 | 2 | 3 | 4 | 5;
+  currentSmoker: 0 | 1;
+  cigsPerDay: number;
+
+  // Medical history
+  BPMeds: 0 | 1;
+  prevalentStroke: 0 | 1;
+  prevalentHyp: 0 | 1;
+  diabetes: 0 | 1;
 
   // Clinical
-  systolicBp: number;
-  diastolicBp: number;
-  cholesterol: number;
-  glucose: number;
+  totChol: number;
+  sysBP: number;
+  diaBP: number;
+  BMI: number;
   heartRate: number;
-
-  // Sleep
-  sleepDurationHours: number;
-  sleepQuality: 1 | 2 | 3 | 4 | 5;
-  sleepDisorder: SleepDisorder;
-  snoring: boolean;
+  glucose: number;
 }
 
-/** Contribution of a single feature toward the final prediction. */
 export interface FactorContribution {
   factor: string;
-  impact: number; // -1 .. 1 (positive = pushes risk up)
-  severity: 'low' | 'medium' | 'high';
+  impact: number;
+  severity: "low" | "medium" | "high";
   label: string;
   detail: string;
 }
 
-/** Full prediction output returned by the ML engine. */
 export interface PredictionResult {
   id: string;
-  riskScore: number; // 0 .. 100
+  riskScore: number;
   riskLevel: RiskLevel;
-  confidence: number; // 0 .. 100 (%)
-  diseaseProbability: number; // 0 .. 100 (%)
+  confidence: number;
+  diseaseProbability: number;
   recommendations: string[];
   contributingFactors: FactorContribution[];
   input: PredictionInput;
   submittedAt: string;
 }
 
-/** Row shown in the history table. */
 export interface PredictionRecord {
   id: string;
   patientId: string;
   patientName: string;
   age: number;
-  gender: Gender;
+
+  // Framingham uses male: 0/1 instead of gender.
+  male: 0 | 1;
+
   riskScore: number;
   riskLevel: RiskLevel;
   confidence: number;
   submittedAt: string;
-  status: 'completed' | 'processing' | 'failed';
+  status: "completed" | "processing" | "failed";
   input: PredictionInput;
 }

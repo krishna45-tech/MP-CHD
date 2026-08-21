@@ -73,7 +73,9 @@
                     <span class="patient-avatar">{{ r.patientName.charAt(0) }}</span>
                     <div>
                       <strong>{{ r.patientName }}</strong>
-                      <span>{{ r.age }} yrs · {{ r.gender }}</span>
+                     <span>
+  {{ r.age }} yrs · {{ r.male === 1 ? 'Male' : 'Female' }}
+</span>
                     </div>
                   </div>
                 </td>
